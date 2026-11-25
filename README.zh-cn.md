@@ -179,6 +179,78 @@ curl -fsSL https://freellmapi.co/install.sh | bash
 
 其余内容，包括 Docker Compose、本地开发、声明式启动配置、生产构建、局域网访问和备份，都在 **[docs/zh-cn/install/01-install.md](docs/zh-cn/install/01-install.md)**。
 
+### Windows 本地运行（不装 Docker）
+
+**前置条件：** Node.js 20.18+（自带 npm）。
+
+```powershell
+git clone https://github.com/cs865546153/freellmapi.git
+cd freellmapi
+npm install
+
+$ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=3001" | Out-File -Encoding utf8 .env
+
+npm run dev
+```
+
+开发模式会同时起两个进程：仪表盘在 http://localhost:5173 ，OpenAI 兼容 API 在 http://localhost:3001/v1 。想只跑单端口的生产构建：
+
+```powershell
+npm run build
+node server/dist/index.js   # API 与仪表盘都在 :3001
+```
+
+> `npm install` 之后如果启动时报 `better-sqlite3 is not installed`，是这个可选原生依赖没装上（Windows 上常见），单独补一次即可：
+>
+> ```powershell
+> cd server
+> npm install better-sqlite3 --no-audit --no-fund
+> ```
+
+### 国内网络：给上游请求配代理
+
+路由器是直连各提供方的，Google、Groq、Cerebras 等在国内直连不通，需要在 `.env` 里指定代理（Clash、v2rayN、sing-box 均可）：
+
+```ini
+# SOCKS5（推荐，socks5h 让 DNS 也走代理）
+PROXY_URL=socks5h://127.0.0.1:7890
+# 或者 HTTP 代理
+# PROXY_URL=http://127.0.0.1:7890
+```
+
+改完重启服务。本机地址（`127.0.0.1`、`localhost`、`::1`）会自动绕过代理，需要豁免更多主机时用 `NO_PROXY=host1,host2`。
+
+### 首次使用
+
+1. 打开仪表盘，按提示创建第一个账号（单用户本地部署，密码只用来保护仪表盘）。从另一台设备访问时，需要输入日志里打印的首次安装码。
+2. 进 **密钥** 页添加提供方密钥。国内较好申请的有 Google AI Studio、Groq、Cerebras、Z.ai（智谱）、OpenRouter、ModelScope 魔搭、NVIDIA、HuggingFace；不想注册也可以先用内置的免密钥提供方（aihorde、kilo、ovh、parallel）。只加一两家就能跑起来。
+3. 在同一页顶部复制 **统一 API 密钥**（`freellmapi-…`）。
+4. 按需在 **模型** 页调整回退链顺序和路由策略。`model` 传 `auto` 由路由器自动挑选，也可以写 `auto:fast`、`auto:smart`、配置档名或具体模型 id。
+
+```bash
+curl http://localhost:3001/v1/chat/completions \
+  -H "Authorization: Bearer freellmapi-你的统一密钥" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"auto","messages":[{"role":"user","content":"你好"}]}'
+```
+
+每个响应都带 `X-Routed-Via: <平台>/<模型>` 头，可以看出这次实际由谁回答。完整接口见 [API 参考](docs/zh-cn/api/01-rest-api.md)。
+
+### 接入编程客户端
+
+拿到统一密钥和 base URL 就能接上，多数客户端一条命令即可写好配置：
+
+```bash
+npx freellmapi setup-opencode --url http://localhost:3001 --api-key <统一密钥>
+npx freellmapi setup-claude   --url http://localhost:3001 --api-key <统一密钥>
+npx freellmapi setup-codex    --url http://localhost:3001 --api-key <统一密钥>
+```
+
+生成器会先备份再合并现有配置，都支持 `--dry-run`。其余工具（Cline、Continue、Aider、Cursor 等）的配方见 **[客户端与编程智能体](docs/zh-cn/clients/01-agent-clients.md)**。
+
+> 本项目是个人实验用的聚合代理：免费模型有每分钟/每天限额、延迟不稳定且没有 SLA；服务默认只监听本机，唯一防护就是那把统一密钥 —— 不要直接暴露到公网。
+
 ## 桌面应用
 
 [`desktop/`](desktop) 里有一个原生的菜单栏应用：整个路由器加仪表盘就在你的托盘里本地运行，还有一个玻璃质感的悬浮窗显示实时请求统计。
