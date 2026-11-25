@@ -177,6 +177,8 @@ On Windows, the easiest path is the desktop app from the **[Microsoft Store](htt
 
 Everything else — Docker Compose, local development, declarative startup config, production builds, LAN access, and backups — is in **[docs/en/install/01-install.md](docs/en/install/01-install.md)**.
 
+> **中文用户：** Windows 本地运行（无需 Docker）、国内代理配置、首次使用与客户端接入，见 **[README.zh-cn.md → 快速开始](README.zh-cn.md#快速开始)**。
+
 ## Desktop app
 
 A native menu-bar app lives in [`desktop/`](./desktop): the entire router + dashboard running locally from your tray, with a glass popover showing live request stats.
