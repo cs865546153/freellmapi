@@ -419,3 +419,14 @@ Leave off `-v` if you want to keep the database for a later reinstall.
 **From source** — delete the checkout. The state that matters is `.env` and
 `server/data/freeapi.db` (or wherever `FREEAPI_DB_PATH` points), so back those
 up first if you plan to come back.
+
+## Local dev pitfalls & one-click setup
+
+If you run into any of the following, see
+[local-dev-pitfalls.md](../../local-dev-pitfalls.md):
+
+- Homebrew building Node from source (slow / fails)
+- `npm install` native module errors
+- `ENCRYPTION_KEY` missing from `.env`
+- opencode `Invalid API key` (auth.json in the wrong location)
+- Alternative one-click setup via Docker Compose
